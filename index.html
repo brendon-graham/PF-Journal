@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="app-version" content="pfe-journal-v1.0.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PFE Journal">
+<meta name="theme-color" content="#1f6f43">
+<title>PFE Journal</title>
+<style>
+:root{
+  --bg:#f4f6f4; --card:#ffffff; --ink:#1c2a22; --muted:#5f7268;
+  --line:#dce4de; --green:#1f6f43; --green-d:#175636; --amber:#b26b00;
+  --red:#b3261e; --accent:#2f8a5b; --shadow:0 1px 3px rgba(0,0,0,.08);
+  --radius:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.45;
+  padding:0 0 90px 0;
+  padding-top:env(safe-area-inset-top);
+}
+header{
+  position:sticky;top:0;z-index:20;
+  background:var(--green);color:#fff;
+  padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;
+  box-shadow:var(--shadow);
+}
+.h-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.h-title{font-weight:700;font-size:18px;letter-spacing:.2px}
+.sync-badge{
+  font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;
+  background:rgba(255,255,255,.16);white-space:nowrap;
+}
+.sync-badge.ok{background:rgba(255,255,255,.22)}
+.sync-badge.off{background:rgba(0,0,0,.18)}
+.sync-badge.err{background:var(--red)}
+main{max-width:680px;margin:0 auto;padding:14px 14px 0}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:14px;margin-bottom:14px;
+}
+.datebar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.datebar .day{
+  flex:1;text-align:center;font-weight:700;font-size:16px;
+}
+.datebar .day small{display:block;font-weight:500;color:var(--muted);font-size:12px;margin-top:2px}
+button{font-family:inherit;font-size:16px;cursor:pointer}
+.navbtn{
+  min-width:48px;height:48px;border-radius:12px;border:1px solid var(--line);
+  background:#fff;color:var(--ink);font-size:22px;font-weight:600;line-height:1;
+}
+.navbtn:active{background:#eef2ef}
+.todaybtn{
+  height:38px;padding:0 14px;border-radius:20px;border:1px solid var(--line);
+  background:#fff;color:var(--green-d);font-weight:600;font-size:14px;
+}
+textarea#entry{
+  width:100%;min-height:230px;resize:vertical;border:1px solid var(--line);
+  border-radius:12px;padding:12px;font-size:17px;line-height:1.5;color:var(--ink);
+  background:#fff;
+}
+textarea#entry:focus{outline:2px solid var(--accent);border-color:var(--accent)}
+.mic-wrap{display:flex;align-items:center;gap:12px;margin-top:12px}
+.mic{
+  flex:1;height:56px;border-radius:14px;border:none;color:#fff;
+  background:var(--green);font-weight:700;font-size:17px;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.mic:active{background:var(--green-d)}
+.mic.listening{background:var(--red);animation:pulse 1.3s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(179,38,30,.45)}70%{box-shadow:0 0 0 14px rgba(179,38,30,0)}100%{box-shadow:0 0 0 0 rgba(179,38,30,0)}}
+.mic-dot{width:12px;height:12px;border-radius:50%;background:#fff;opacity:.9}
+.hint{font-size:13px;color:var(--muted);margin-top:8px}
+.saved-tag{font-size:12px;color:var(--accent);font-weight:600;margin-top:8px;min-height:16px}
+.section-title{font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:2px 0 10px}
+.recent-item{
+  display:flex;justify-content:space-between;gap:10px;padding:12px 10px;border-radius:10px;
+  border:1px solid var(--line);margin-bottom:8px;background:#fff;
+}
+.recent-item:active{background:#eef2ef}
+.recent-item .rt{font-weight:600;font-size:14px}
+.recent-item .rp{color:var(--muted);font-size:13px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.feed-entry{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;background:#fff}
+.feed-entry .fw{font-weight:700;color:var(--green-d);font-size:15px;margin-bottom:6px}
+.feed-entry .fb{white-space:pre-wrap;font-size:15px;line-height:1.5}
+.empty{color:var(--muted);text-align:center;padding:26px 10px;font-size:15px}
+label.fld{display:block;font-weight:600;font-size:14px;margin:14px 0 6px}
+input.txt{width:100%;height:46px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-size:15px}
+.btn{
+  height:48px;padding:0 18px;border-radius:12px;border:none;background:var(--green);
+  color:#fff;font-weight:700;font-size:16px;width:100%;margin-top:14px;
+}
+.btn:active{background:var(--green-d)}
+.btn.sec{background:#fff;color:var(--green-d);border:1px solid var(--line)}
+.set-note{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.5}
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  display:flex;background:#fff;border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.tabbar button{
+  flex:1;background:none;border:none;padding:10px 4px 8px;color:var(--muted);
+  font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+.tabbar button .ic{font-size:20px;line-height:1}
+.tabbar button.active{color:var(--green)}
+.view{display:none}
+.view.active{display:block}
+</style>
+</head>
+<body>
+<header>
+  <div class="h-row">
+    <div class="h-title">PFE Journal</div>
+    <div id="syncBadge" class="sync-badge off">Local only</div>
+  </div>
+</header>
+
+<main>
+  <!-- JOURNAL -->
+  <section id="view-journal" class="view active">
+    <div class="card">
+      <div class="datebar">
+        <button class="navbtn" onclick="stepDay(-1)" aria-label="Previous day">&#8249;</button>
+        <div class="day" id="dayLabel">Today<small id="daySub"></small></div>
+        <button class="navbtn" id="nextBtn" onclick="stepDay(1)" aria-label="Next day">&#8250;</button>
+      </div>
+      <div style="text-align:center;margin-bottom:12px">
+        <button class="todaybtn" onclick="goToday()">Jump to today</button>
+      </div>
+      <textarea id="entry" placeholder="Talk or type today's debrief — weather, stock, feed, health, jobs, anything worth remembering." oninput="onEntryInput()" spellcheck="true"></textarea>
+      <div class="mic-wrap">
+        <button class="mic" id="micBtn" onclick="toggleMic()">
+          <span class="mic-dot"></span><span id="micLabel">Talk</span>
+        </button>
+      </div>
+      <div class="hint" id="micHint"></div>
+      <div class="saved-tag" id="savedTag"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Recent days</div>
+      <div id="recentList"></div>
+    </div>
+  </section>
+
+  <!-- FEED POSITION -->
+  <section id="view-feed" class="view">
+    <div class="card">
+      <div class="section-title">Weekly feed position</div>
+      <div id="feedList"></div>
+      <div class="set-note">Written weekly by the Brain from PFE Tracker. Gives a rolling picture for planning ahead.</div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="view">
+    <div class="card">
+      <div class="section-title">Sync</div>
+      <label class="fld" for="epInput">Google Apps Script endpoint (/exec URL)</label>
+      <input class="txt" id="epInput" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <button class="btn" onclick="saveEndpoint()">Save &amp; connect</button>
+      <button class="btn sec" onclick="manualSync()">Sync now</button>
+      <div class="set-note" id="syncInfo"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">About</div>
+      <div class="set-note">
+        PFE Journal v1.0.0. Entries save on your phone and sync to your Google Sheet.
+        Add to home screen for a full-screen app: Share → Add to Home Screen.
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="tabbar">
+  <button id="tab-journal" class="active" onclick="showTab('journal')"><span class="ic">&#9998;</span>Journal</button>
+  <button id="tab-feed" onclick="showTab('feed')"><span class="ic">&#9635;</span>Feed</button>
+  <button id="tab-settings" onclick="showTab('settings')"><span class="ic">&#9881;</span>Settings</button>
+</nav>
+
+<script>
+"use strict";
+
+/* ---------- storage keys ---------- */
+const K_ENTRIES="pfej_entries";
+const K_ENDPOINT="pfej_endpoint";
+const K_LASTTS="pfej_lastTs";
+const K_DEVICE="pfej_deviceId";
+
+/* ---------- state ---------- */
+let entries=[];            // {id,kind,date,body,updatedAt,deleted}
+let endpoint="";
+let lastTs="";
+let deviceId="";
+let currentDate=isoToday();
+let activeTab="journal";
+let pushTimer=null;
+let pollTimer=null;
+let syncPending=false;
+let pushAgain=false;
+
+/* ---------- date helpers ---------- */
+function pad(n){return n<10?"0"+n:""+n;}
+function isoOf(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function isoToday(){return isoOf(new Date());}
+function parseIso(s){const p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
+function longDate(s){
+  const d=parseIso(s);
+  const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const mons=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return days[d.getDay()]+", "+d.getDate()+" "+mons[d.getMonth()]+" "+d.getFullYear();
+}
+function nowStamp(){return new Date().toISOString();}
+
+/* ---------- load / persist ---------- */
+function load(){
+  try{entries=JSON.parse(localStorage.getItem(K_ENTRIES)||"[]");}catch(e){entries=[];}
+  endpoint=localStorage.getItem(K_ENDPOINT)||"";
+  lastTs=localStorage.getItem(K_LASTTS)||"";
+  deviceId=localStorage.getItem(K_DEVICE)||"";
+  if(!deviceId){deviceId="d"+Math.random().toString(36).slice(2,9);localStorage.setItem(K_DEVICE,deviceId);}
+}
+function saveLocal(){localStorage.setItem(K_ENTRIES,JSON.stringify(entries));}
+
+/* ---------- entry access ---------- */
+function idOf(kind,date){return kind+":"+date;}
+function getEntry(kind,date){return entries.find(e=>e.id===idOf(kind,date)&&!e.deleted)||null;}
+function currentBody(){const e=getEntry("day",currentDate);return e?e.body:"";}
+function setBody(date,body){
+  const id=idOf("day",date);
+  let e=entries.find(x=>x.id===id);
+  if(!e){e={id:id,kind:"day",date:date,body:body,updatedAt:nowStamp(),deleted:false};entries.push(e);}
+  else{e.body=body;e.updatedAt=nowStamp();e.deleted=false;}
+  saveLocal();
+}
+
+/* ---------- rendering ---------- */
+function render(){renderJournal();renderFeed();renderSettings();updateBadge();}
+function renderJournal(){
+  document.getElementById("dayLabel").childNodes[0].nodeValue=
+    (currentDate===isoToday()?"Today":shortLabel(currentDate));
+  document.getElementById("daySub").textContent=longDate(currentDate);
+  const nb=document.getElementById("nextBtn");
+  nb.style.visibility=(currentDate>=isoToday())?"hidden":"visible";
+  const ta=document.getElementById("entry");
+  ta.value=currentBody();
+  document.getElementById("savedTag").textContent="";
+  renderRecent();
+}
+function shortLabel(iso){
+  const d=parseIso(iso),t=parseIso(isoToday());
+  const diff=Math.round((t-d)/86400000);
+  if(diff===1)return "Yesterday";
+  return longDate(iso).split(",")[0];
+}
+function renderRecent(){
+  const days=entries.filter(e=>e.kind==="day"&&!e.deleted&&(e.body||"").trim())
+    .sort((a,b)=>b.date.localeCompare(a.date)).slice(0,14);
+  const box=document.getElementById("recentList");
+  if(!days.length){box.innerHTML='<div class="empty">No entries yet. Your days will appear here.</div>';return;}
+  box.innerHTML=days.map(e=>{
+    const prev=e.body.replace(/\s+/g," ").trim().slice(0,60);
+    return '<div class="recent-item" onclick="openDay(\''+e.date+'\')">'+
+      '<div><div class="rt">'+longDate(e.date)+'</div><div class="rp">'+esc(prev)+'</div></div>'+
+      '<div style="color:var(--muted);font-size:20px">&#8250;</div></div>';
+  }).join("");
+}
+function renderFeed(){
+  const feeds=entries.filter(e=>e.kind==="feed"&&!e.deleted&&(e.body||"").trim())
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  const box=document.getElementById("feedList");
+  if(!feeds.length){box.innerHTML='<div class="empty">No feed-position snapshots yet.<br>The Brain writes these weekly from PFE Tracker.</div>';return;}
+  box.innerHTML=feeds.map(e=>
+    '<div class="feed-entry"><div class="fw">Week of '+longDate(e.date)+'</div>'+
+    '<div class="fb">'+esc(e.body)+'</div></div>').join("");
+}
+function renderSettings(){
+  document.getElementById("epInput").value=endpoint;
+  const info=document.getElementById("syncInfo");
+  if(!endpoint){info.textContent="Not connected. Paste your endpoint above to sync across devices and let the Brain read your journal.";}
+  else{info.textContent="Connected. Last sync check: "+(lastTs?new Date(lastTs).toLocaleString("en-NZ"):"—");}
+}
+function esc(s){return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+/* ---------- badge ---------- */
+function updateBadge(){
+  const b=document.getElementById("syncBadge");
+  if(!endpoint){b.className="sync-badge off";b.textContent="Local only";return;}
+  if(syncPending){b.className="sync-badge ok";b.textContent="Saving…";return;}
+  b.className="sync-badge ok";b.textContent="Synced";
+}
+function badgeErr(){const b=document.getElementById("syncBadge");b.className="sync-badge err";b.textContent="Sync error";}
+
+/* ---------- input ---------- */
+let saveDebounce=null;
+function onEntryInput(){
+  const ta=document.getElementById("entry");
+  setBody(currentDate,ta.value);
+  document.getElementById("savedTag").textContent="Saved";
+  clearTimeout(saveDebounce);
+  saveDebounce=setTimeout(()=>{document.getElementById("savedTag").textContent="";},1200);
+  schedulePush();
+}
+
+/* ---------- date nav ---------- */
+function stepDay(n){
+  const d=parseIso(currentDate);d.setDate(d.getDate()+n);
+  const ni=isoOf(d);
+  if(ni>isoToday())return;
+  currentDate=ni;renderJournal();
+}
+function goToday(){currentDate=isoToday();renderJournal();showTab("journal");}
+function openDay(iso){currentDate=iso;renderJournal();showTab("journal");window.scrollTo(0,0);}
+
+/* ---------- tabs ---------- */
+function showTab(t){
+  activeTab=t;
+  ["journal","feed","settings"].forEach(x=>{
+    document.getElementById("view-"+x).classList.toggle("active",x===t);
+    document.getElementById("tab-"+x).classList.toggle("active",x===t);
+  });
+  if(t!=="journal"&&listening)stopMic();
+}
+
+/* ---------- voice ---------- */
+let recog=null,listening=false,sessionBase="";
+function speechSupported(){return("webkitSpeechRecognition" in window)||("SpeechRecognition" in window);}
+function initMicUi(){
+  const hint=document.getElementById("micHint");
+  if(!speechSupported()){
+    document.getElementById("micBtn").style.display="none";
+    hint.textContent="Tip: tap the microphone on your phone keyboard to dictate straight into the box above.";
+  }else{
+    hint.textContent="Tap Talk, then speak. Tap again to stop. You can also edit the text by hand.";
+  }
+}
+function toggleMic(){listening?stopMic():startMic();}
+function joinText(a,b){a=a||"";b=(b||"").trim();if(!b)return a;if(!a.trim())return b;return a.replace(/\s+$/,"")+" "+b;}
+function startMic(){
+  if(!speechSupported())return;
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  recog=new SR();recog.lang="en-NZ";recog.continuous=true;recog.interimResults=true;
+  sessionBase=currentBody();
+  recog.onstart=()=>{listening=true;setMicUi();};
+  recog.onerror=()=>{};
+  recog.onend=()=>{listening=false;setMicUi();};
+  recog.onresult=(e)=>{
+    let finals="",interim="";
+    for(let i=0;i<e.results.length;i++){
+      const t=e.results[i][0].transcript;
+      if(e.results[i].isFinal)finals+=t;else interim+=t;
+    }
+    const ta=document.getElementById("entry");
+    ta.value=joinText(sessionBase,finals+interim);
+    setBody(currentDate,joinText(sessionBase,finals));
+    schedulePush();
+  };
+  try{recog.start();}catch(err){}
+}
+function stopMic(){if(recog){try{recog.stop();}catch(e){}}listening=false;setMicUi();}
+function setMicUi(){
+  const btn=document.getElementById("micBtn"),lbl=document.getElementById("micLabel");
+  btn.classList.toggle("listening",listening);
+  lbl.textContent=listening?"Listening… tap to stop":"Talk";
+}
+
+/* ---------- sync ---------- */
+function saveEndpoint(){
+  const v=document.getElementById("epInput").value.trim();
+  endpoint=v;localStorage.setItem(K_ENDPOINT,endpoint);
+  updateBadge();renderSettings();
+  if(endpoint){pullFromSheet(true);startPoll();}
+}
+function manualSync(){if(!endpoint){alert("Add your endpoint first.");return;}pullFromSheet(true);}
+function schedulePush(){
+  if(!endpoint)return;
+  syncPending=true;updateBadge();
+  clearTimeout(pushTimer);
+  pushTimer=setTimeout(pushToSheet,1500);
+}
+function isEditing(){return document.activeElement===document.getElementById("entry")||listening;}
+
+function mergeRows(rows){
+  let changed=false;
+  rows.forEach(r=>{
+    if(!r||!r.id)return;
+    const ci=r.id.indexOf(":");           // Sheets can coerce the date cell to a Date object;
+    if(ci>=0)r.date=r.id.slice(ci+1);     // derive the clean YYYY-MM-DD from the id instead
+    const i=entries.findIndex(e=>e.id===r.id);
+    if(i<0){entries.push(r);changed=true;}
+    else if(String(r.updatedAt)>String(entries[i].updatedAt)){entries[i]=r;changed=true;}
+  });
+  if(changed)saveLocal();
+  return changed;
+}
+
+async function pullFromSheet(force){
+  if(!endpoint)return;
+  try{
+    const res=await fetch(endpoint,{method:"GET"});
+    const data=await res.json();
+    if(!data||!data.ok)throw new Error("bad");
+    const changed=mergeRows(data.rows||[]);
+    lastTs=data.lastModified||lastTs;localStorage.setItem(K_LASTTS,lastTs);
+    if(changed||force){
+      const ta=document.getElementById("entry");
+      const focused=(document.activeElement===ta);
+      if(!focused)renderJournal();
+      renderFeed();
+    }
+    updateBadge();renderSettings();
+  }catch(e){badgeErr();}
+}
+
+async function pushToSheet(){
+  if(!endpoint){syncPending=false;return;}
+  if(isEditing()){pushAgain=true;pushTimer=setTimeout(pushToSheet,1500);return;}
+  try{
+    const res=await fetch(endpoint,{
+      method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({rows:entries})
+    });
+    const data=await res.json();
+    if(!data||!data.ok)throw new Error("bad");
+    mergeRows(data.rows||[]);
+    lastTs=data.lastModified||lastTs;localStorage.setItem(K_LASTTS,lastTs);
+    syncPending=false;updateBadge();
+    if(pushAgain){pushAgain=false;schedulePush();}
+  }catch(e){syncPending=false;badgeErr();}
+}
+
+function startPoll(){
+  clearInterval(pollTimer);
+  if(!endpoint)return;
+  pollTimer=setInterval(async ()=>{
+    if(!endpoint||syncPending||isEditing())return;
+    try{
+      const res=await fetch(endpoint,{method:"GET"});
+      const data=await res.json();
+      if(data&&data.ok&&(data.lastModified||"")>lastTs){
+        if(isEditing())return;
+        mergeRows(data.rows||[]);
+        lastTs=data.lastModified;localStorage.setItem(K_LASTTS,lastTs);
+        const ta=document.getElementById("entry");
+        if(document.activeElement!==ta)renderJournal();
+        renderFeed();updateBadge();
+      }
+    }catch(e){}
+  },30000);
+}
+
+/* ---------- boot ---------- */
+function boot(){
+  load();
+  render();
+  initMicUi();
+  if(endpoint){pullFromSheet(true);startPoll();}
+}
+boot();
+</script>
+</body>
+</html>
