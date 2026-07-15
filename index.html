@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="pfe-journal-v1.0.0">
+<meta name="app-version" content="pfe-journal-v1.0.1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="PFE Journal">
@@ -172,7 +172,7 @@ input.txt{width:100%;height:46px;border:1px solid var(--line);border-radius:10px
     <div class="card">
       <div class="section-title">About</div>
       <div class="set-note">
-        PFE Journal v1.0.0. Entries save on your phone and sync to your Google Sheet.
+        PFE Journal v1.0.1. Entries save on your phone and sync to your Google Sheet.
         Add to home screen for a full-screen app: Share → Add to Home Screen.
       </div>
     </div>
@@ -193,6 +193,11 @@ const K_ENTRIES="pfej_entries";
 const K_ENDPOINT="pfej_endpoint";
 const K_LASTTS="pfej_lastTs";
 const K_DEVICE="pfej_deviceId";
+
+/* ---------- safe storage (never throws — blocked storage falls back to in-memory) ---------- */
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
 
 /* ---------- state ---------- */
 let entries=[];            // {id,kind,date,body,updatedAt,deleted}
@@ -221,13 +226,13 @@ function nowStamp(){return new Date().toISOString();}
 
 /* ---------- load / persist ---------- */
 function load(){
-  try{entries=JSON.parse(localStorage.getItem(K_ENTRIES)||"[]");}catch(e){entries=[];}
-  endpoint=localStorage.getItem(K_ENDPOINT)||"";
-  lastTs=localStorage.getItem(K_LASTTS)||"";
-  deviceId=localStorage.getItem(K_DEVICE)||"";
-  if(!deviceId){deviceId="d"+Math.random().toString(36).slice(2,9);localStorage.setItem(K_DEVICE,deviceId);}
+  try{entries=JSON.parse(lsGet(K_ENTRIES)||"[]");}catch(e){entries=[];}
+  endpoint=lsGet(K_ENDPOINT)||"";
+  lastTs=lsGet(K_LASTTS)||"";
+  deviceId=lsGet(K_DEVICE)||"";
+  if(!deviceId){deviceId="d"+Math.random().toString(36).slice(2,9);lsSet(K_DEVICE,deviceId);}
 }
-function saveLocal(){localStorage.setItem(K_ENTRIES,JSON.stringify(entries));}
+function saveLocal(){lsSet(K_ENTRIES,JSON.stringify(entries));}
 
 /* ---------- entry access ---------- */
 function idOf(kind,date){return kind+":"+date;}
@@ -336,9 +341,9 @@ function initMicUi(){
   const hint=document.getElementById("micHint");
   if(!speechSupported()){
     document.getElementById("micBtn").style.display="none";
-    hint.textContent="Tip: tap the microphone on your phone keyboard to dictate straight into the box above.";
+    hint.textContent="Dictate straight into the box above with Wispr Flow or your keyboard mic — that gives the best result. You can also type by hand.";
   }else{
-    hint.textContent="Tap Talk, then speak. Tap again to stop. You can also edit the text by hand.";
+    hint.textContent="Best result: dictate into the box above with Wispr Flow or your keyboard mic. Or tap Talk for built-in dictation. You can also type by hand.";
   }
 }
 function toggleMic(){listening?stopMic():startMic();}
@@ -374,7 +379,7 @@ function setMicUi(){
 /* ---------- sync ---------- */
 function saveEndpoint(){
   const v=document.getElementById("epInput").value.trim();
-  endpoint=v;localStorage.setItem(K_ENDPOINT,endpoint);
+  endpoint=v;lsSet(K_ENDPOINT,endpoint);
   updateBadge();renderSettings();
   if(endpoint){pullFromSheet(true);startPoll();}
 }
@@ -386,6 +391,24 @@ function schedulePush(){
   pushTimer=setTimeout(pushToSheet,1500);
 }
 function isEditing(){return document.activeElement===document.getElementById("entry")||listening;}
+
+/* Capture whatever is in the box (from any source — Wispr Flow, keyboard mic, typing)
+   and flush the sync immediately. Guards against losing a dictated entry when the box
+   loses focus or the app is backgrounded/locked before the debounced push fires. */
+function captureCurrent(){
+  const ta=document.getElementById("entry");
+  if(!ta)return false;
+  const e=getEntry("day",currentDate);
+  const cur=e?e.body:"";
+  if(ta.value!==cur){setBody(currentDate,ta.value);return true;}
+  return false;
+}
+function flushPush(){
+  if(!endpoint)return;
+  clearTimeout(pushTimer);
+  if(isEditing())return; // pushToSheet re-queues while focused; blur/hide paths aren't editing
+  pushToSheet();
+}
 
 function mergeRows(rows){
   let changed=false;
@@ -408,7 +431,7 @@ async function pullFromSheet(force){
     const data=await res.json();
     if(!data||!data.ok)throw new Error("bad");
     const changed=mergeRows(data.rows||[]);
-    lastTs=data.lastModified||lastTs;localStorage.setItem(K_LASTTS,lastTs);
+    lastTs=data.lastModified||lastTs;lsSet(K_LASTTS,lastTs);
     if(changed||force){
       const ta=document.getElementById("entry");
       const focused=(document.activeElement===ta);
@@ -431,7 +454,7 @@ async function pushToSheet(){
     const data=await res.json();
     if(!data||!data.ok)throw new Error("bad");
     mergeRows(data.rows||[]);
-    lastTs=data.lastModified||lastTs;localStorage.setItem(K_LASTTS,lastTs);
+    lastTs=data.lastModified||lastTs;lsSet(K_LASTTS,lastTs);
     syncPending=false;updateBadge();
     if(pushAgain){pushAgain=false;schedulePush();}
   }catch(e){syncPending=false;badgeErr();}
@@ -448,7 +471,7 @@ function startPoll(){
       if(data&&data.ok&&(data.lastModified||"")>lastTs){
         if(isEditing())return;
         mergeRows(data.rows||[]);
-        lastTs=data.lastModified;localStorage.setItem(K_LASTTS,lastTs);
+        lastTs=data.lastModified;lsSet(K_LASTTS,lastTs);
         const ta=document.getElementById("entry");
         if(document.activeElement!==ta)renderJournal();
         renderFeed();updateBadge();
@@ -462,6 +485,12 @@ function boot(){
   load();
   render();
   initMicUi();
+  const ta=document.getElementById("entry");
+  ta.addEventListener("blur",()=>{if(captureCurrent())saveLocal();flushPush();});
+  document.addEventListener("visibilitychange",()=>{
+    if(document.visibilityState==="hidden"){captureCurrent();flushPush();}
+  });
+  window.addEventListener("pagehide",()=>{captureCurrent();flushPush();});
   if(endpoint){pullFromSheet(true);startPoll();}
 }
 boot();
