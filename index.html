@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="pfe-journal-v1.0.1">
+<meta name="app-version" content="pfe-journal-v1.1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="PFE Journal">
@@ -159,6 +159,15 @@ input.txt{width:100%;height:46px;border:1px solid var(--line);border-radius:10px
     </div>
   </section>
 
+  <!-- DAILY BRIEF -->
+  <section id="view-brief" class="view">
+    <div class="card">
+      <div class="section-title">Daily brief</div>
+      <div id="briefList"></div>
+      <div class="set-note">Written each morning by the Brain from live weather, the tracker and your health plan. Only what needs your attention today.</div>
+    </div>
+  </section>
+
   <!-- SETTINGS -->
   <section id="view-settings" class="view">
     <div class="card">
@@ -172,7 +181,7 @@ input.txt{width:100%;height:46px;border:1px solid var(--line);border-radius:10px
     <div class="card">
       <div class="section-title">About</div>
       <div class="set-note">
-        PFE Journal v1.0.1. Entries save on your phone and sync to your Google Sheet.
+        PFE Journal v1.1.0. Entries save on your phone and sync to your Google Sheet.
         Add to home screen for a full-screen app: Share → Add to Home Screen.
       </div>
     </div>
@@ -181,6 +190,7 @@ input.txt{width:100%;height:46px;border:1px solid var(--line);border-radius:10px
 
 <nav class="tabbar">
   <button id="tab-journal" class="active" onclick="showTab('journal')"><span class="ic">&#9998;</span>Journal</button>
+  <button id="tab-brief" onclick="showTab('brief')"><span class="ic">&#9776;</span>Brief</button>
   <button id="tab-feed" onclick="showTab('feed')"><span class="ic">&#9635;</span>Feed</button>
   <button id="tab-settings" onclick="showTab('settings')"><span class="ic">&#9881;</span>Settings</button>
 </nav>
@@ -247,7 +257,7 @@ function setBody(date,body){
 }
 
 /* ---------- rendering ---------- */
-function render(){renderJournal();renderFeed();renderSettings();updateBadge();}
+function render(){renderJournal();renderBrief();renderFeed();renderSettings();updateBadge();}
 function renderJournal(){
   document.getElementById("dayLabel").childNodes[0].nodeValue=
     (currentDate===isoToday()?"Today":shortLabel(currentDate));
@@ -284,6 +294,16 @@ function renderFeed(){
   if(!feeds.length){box.innerHTML='<div class="empty">No feed-position snapshots yet.<br>The Brain writes these weekly from PFE Tracker.</div>';return;}
   box.innerHTML=feeds.map(e=>
     '<div class="feed-entry"><div class="fw">Week of '+longDate(e.date)+'</div>'+
+    '<div class="fb">'+esc(e.body)+'</div></div>').join("");
+}
+function renderBrief(){
+  const briefs=entries.filter(e=>e.kind==="brief"&&!e.deleted&&(e.body||"").trim())
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  const box=document.getElementById("briefList");
+  if(!box)return;
+  if(!briefs.length){box.innerHTML='<div class="empty">No brief yet.<br>The Brain writes one each morning at 5:30.</div>';return;}
+  box.innerHTML=briefs.map(e=>
+    '<div class="feed-entry"><div class="fw">'+longDate(e.date)+'</div>'+
     '<div class="fb">'+esc(e.body)+'</div></div>').join("");
 }
 function renderSettings(){
@@ -327,7 +347,7 @@ function openDay(iso){currentDate=iso;renderJournal();showTab("journal");window.
 /* ---------- tabs ---------- */
 function showTab(t){
   activeTab=t;
-  ["journal","feed","settings"].forEach(x=>{
+  ["journal","brief","feed","settings"].forEach(x=>{
     document.getElementById("view-"+x).classList.toggle("active",x===t);
     document.getElementById("tab-"+x).classList.toggle("active",x===t);
   });
@@ -436,7 +456,7 @@ async function pullFromSheet(force){
       const ta=document.getElementById("entry");
       const focused=(document.activeElement===ta);
       if(!focused)renderJournal();
-      renderFeed();
+      renderFeed();renderBrief();
     }
     updateBadge();renderSettings();
   }catch(e){badgeErr();}
@@ -474,7 +494,7 @@ function startPoll(){
         lastTs=data.lastModified;lsSet(K_LASTTS,lastTs);
         const ta=document.getElementById("entry");
         if(document.activeElement!==ta)renderJournal();
-        renderFeed();updateBadge();
+        renderFeed();renderBrief();updateBadge();
       }
     }catch(e){}
   },30000);
